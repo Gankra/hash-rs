@@ -1,0 +1,47 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="//cdnjs.cloudflare.com/ajax/libs/dygraph/1.1.1/dygraph-combined.js"></script>
+</head>
+<body>
+<div style = "display: inline;">
+  <div id="graphdiv4" style="width:650px; height:600px;"></div>
+</div>
+<div style = "display: inline;">
+  <div id="graphdiv5" style="width:650px; height:600px;"></div>
+</div>
+<script type="text/javascript">
+  g4 = new Dygraph(
+    document.getElementById("graphdiv4"),
+    "bytes-time.csv",
+    {
+      logscale: true,
+      title: "time to hash (lower is better)",
+      xlabel: "bytes hashed",
+      ylabel: "time (ns)",
+      strokeWidth: 2.0,
+      axes: {
+        x: { logscale: true, drawGrid: false },
+        y: { logscale: true, drawGrid: false },
+      },
+    }
+  );
+
+  g5 = new Dygraph(
+    document.getElementById("graphdiv5"),
+    "bytes-throughput.csv",
+    {
+      logscale: true,
+      title: "bytes per second (higher is better)",
+      xlabel: "bytes hashed",
+      ylabel: "throughput (MB/s)",
+      strokeWidth: 2.0,
+      axes: {
+        x: { logscale: true, drawGrid: false },
+        y: { logscale: true, drawGrid: false },
+      }
+    }
+  );
+</script>
+</body>
+</html>
