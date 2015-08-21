@@ -3,24 +3,54 @@
 <head>
 <script src="//cdnjs.cloudflare.com/ajax/libs/dygraph/1.1.1/dygraph-combined.js"></script>
 </head>
-<body>
-<div style = "display: inline;">
-  <div id="graphdiv4" style="width:650px; height:600px;"></div>
-</div>
-<div style = "display: inline;">
-  <div id="graphdiv5" style="width:650px; height:600px;"></div>
-</div>
+<body id="inject">
+
 <script type="text/javascript">
-  g4 = new Dygraph(
-    document.getElementById("graphdiv4"),
-    "bytes-time.csv",
+
+function makeBench(name, title) {
+  var benchDiv = document.createElement("div");
+  var timeDiv = makeDiv();
+  var tputDiv = makeDiv();
+  var heading = document.createElement("h1");
+  heading.textContent = title;
+  heading.style = "text-align: center;"
+
+  benchDiv.appendChild(heading);
+  benchDiv.appendChild(timeDiv);
+  benchDiv.appendChild(tputDiv);
+
+  document.getElementById("inject").appendChild(benchDiv);
+
+  makeGraph("Time (lower is better)",
+            "bytes hashed",
+            "time (ns)",
+            name + "-time.csv",
+            timeDiv);
+
+  makeGraph("Throughput (higher is better)",
+            "bytes hashed",
+            "throughput (MB/s)",
+            name + "-throughput.csv",
+            tputDiv);
+}
+
+function makeDiv() {
+  var div = document.createElement("div");
+  div.style = "display: inline-block; width:650px; height:600px;";
+  return div;
+}
+
+function makeGraph(title, xLabel, yLabel, csv, div) {
+  var graph = new Dygraph(
+    div,
+    csv,
     {
       logscale: true,
-      title: "time to hash (lower is better)",
-      xlabel: "bytes hashed",
-      ylabel: "time (ns)",
+      title: title,
+      xlabel: xLabel,
+      ylabel: yLabel,
       strokeWidth: 2.0,
-      labelsDivWidth: 650,
+      labelsDivWidth: 400,
       legend: "always",
       axes: {
         x: { logscale: true, drawGrid: false },
@@ -28,24 +58,10 @@
       },
     }
   );
+}
 
-  g5 = new Dygraph(
-    document.getElementById("graphdiv5"),
-    "bytes-throughput.csv",
-    {
-      logscale: true,
-      title: "bytes per second (higher is better)",
-      xlabel: "bytes hashed",
-      ylabel: "throughput (MB/s)",
-      strokeWidth: 2.0,
-      labelsDivWidth: 650,
-      legend: "always",
-      axes: {
-        x: { logscale: true, drawGrid: false },
-        y: { logscale: true, drawGrid: false },
-      }
-    }
-  );
+makeBench("bytes", "Hashing an array of bytes");
 </script>
 </body>
 </html>
+
