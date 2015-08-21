@@ -17,7 +17,8 @@
 
 <p>
   Variance bars excluded because this dang charting library was absolutely
-  freaking out with them.
+  freaking out with them. Note also that both axes are on a log-scale, so small
+  vertical differences may actually represent a large difference.
 </p>
 
 <p>
@@ -74,6 +75,15 @@ function makeGraph(title, xLabel, yLabel, csv, div) {
       axes: {
         x: { logscale: true, drawGrid: false },
         y: { logscale: true, drawGrid: false },
+      },
+      series: {
+        sip: { color: "#cc0000" },
+        xx: { color: "#00cc00" },
+        fnv: { color: "#0000cc" },
+        farm: { color: "#cc00cc" },
+        murmur: { color: "#cccc00" },
+        city: { color: "#00cccc" },
+        btree: { color: "#000000" },
       },
     }
   );
