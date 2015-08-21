@@ -10,7 +10,6 @@ extern crate fnv as _fnv;
 extern crate blake2_rfc;
 extern crate test;
 extern crate regex;
-extern crate gnuplot;
 
 use std::process::Command;
 use std::io::Result as IoResult;
@@ -114,17 +113,18 @@ macro_rules! hash_benches {
         use blake2_rfc::blake2s::Blake2s;
         use _fnv::FnvHasher as Fnv;
         use farmhash::FarmHasher as Farm;
-        use test::{black_box, Bencher};
         use std::hash::Hasher;
         use std::collections::hash_state::{DefaultState, HashState};
 
+        use std::collections::HashMap;
+        use test::{black_box, Bencher};
         pub type B<'a> = &'a mut Bencher;
 
         fn hasher_bench<H>(b: B, len: usize)
         where H: Hasher + Default
         {
             let hash_state = DefaultState::<H>::default();
-            let bytes: Vec<_> = (0..100).cycle().take(len).collect();
+            let bytes: Vec<u8> = (0..100).cycle().take(len).collect();
             let bytes = black_box(bytes);
 
             b.bytes = bytes.len() as u64;
@@ -135,6 +135,25 @@ macro_rules! hash_benches {
             });
         }
 
+        fn map_bench<H>(b: B, len: usize)
+        where H: Hasher + Default
+        {
+            let num_strings = 1000;
+            let prime1 = 93;
+            let data: Vec<u8> = (0..prime1).cycle().take(len * num_strings).collect();
+            let data = black_box(data);
+
+            b.bytes = (len * num_strings) as u64;
+            b.iter(|| {
+                // don't reserve space to be fair to BTree
+                let mut map = HashMap::with_hash_state(DefaultState::<H>::default());
+                for chunk in data.chunks(len) {
+                    *map.entry(chunk).or_insert(0) += 1;
+                }
+                map
+            });
+        }
+/*
         #[bench] fn bytes_000000001(b: B) { hasher_bench::<$Impl>(b, 1) }
         #[bench] fn bytes_000000002(b: B) { hasher_bench::<$Impl>(b, 2) }
         #[bench] fn bytes_000000004(b: B) { hasher_bench::<$Impl>(b, 4) }
@@ -153,14 +172,80 @@ macro_rules! hash_benches {
         #[bench] fn bytes_000032000(b: B) { hasher_bench::<$Impl>(b, 32_000) }
         #[bench] fn bytes_000064000(b: B) { hasher_bench::<$Impl>(b, 64_000) }
         #[bench] fn bytes_001000000(b: B) { hasher_bench::<$Impl>(b, 1_000_000) }
+*/
+
+        #[bench] fn mapcount_000000001(b: B) { map_bench::<$Impl>(b, 1) }
+        #[bench] fn mapcount_000000002(b: B) { map_bench::<$Impl>(b, 2) }
+        #[bench] fn mapcount_000000004(b: B) { map_bench::<$Impl>(b, 4) }
+        #[bench] fn mapcount_000000008(b: B) { map_bench::<$Impl>(b, 8) }
+        #[bench] fn mapcount_000000016(b: B) { map_bench::<$Impl>(b, 16) }
+        #[bench] fn mapcount_000000032(b: B) { map_bench::<$Impl>(b, 32) }
+        #[bench] fn mapcount_000000064(b: B) { map_bench::<$Impl>(b, 64) }
+        #[bench] fn mapcount_000000128(b: B) { map_bench::<$Impl>(b, 128) }
+        #[bench] fn mapcount_000000256(b: B) { map_bench::<$Impl>(b, 256) }
+        #[bench] fn mapcount_000000512(b: B) { map_bench::<$Impl>(b, 512) }
+        #[bench] fn mapcount_000001024(b: B) { map_bench::<$Impl>(b, 1024) }
+        #[bench] fn mapcount_000002048(b: B) { map_bench::<$Impl>(b, 2048) }
+        #[bench] fn mapcount_000004096(b: B) { map_bench::<$Impl>(b, 4096) }
+        #[bench] fn mapcount_000008000(b: B) { map_bench::<$Impl>(b, 8000) }
+        #[bench] fn mapcount_000016000(b: B) { map_bench::<$Impl>(b, 16_000) }
+        #[bench] fn mapcount_000032000(b: B) { map_bench::<$Impl>(b, 32_000) }
+        #[bench] fn mapcount_000064000(b: B) { map_bench::<$Impl>(b, 64_000) }
+        // #[bench] fn mapcount_001000000(b: B) { map_bench::<$Impl>(b, 1_000_000) }
     }
 }
 
 #[cfg(test)] mod sip { hash_benches!{Sip} }
 #[cfg(test)] mod xx { hash_benches!{Xx} }
 #[cfg(test)] mod farm { hash_benches!{Farm} }
+#[cfg(test)] mod fnv { hash_benches!{Fnv} }
+
+// one day?
+
 // #[cfg(test)] mod blake2b { hash_benches!{Blake2b} }
 // #[cfg(test)] mod blake2s { hash_benches!{Blake2s} }
-#[cfg(test)] mod fnv { hash_benches!{Fnv} }
 // #[cfg(test)] mod murmur { hash_benches!{MurMur}}
+
+#[cfg(test)]
+mod btree {
+    use std::collections::BTreeMap;
+    use test::{black_box, Bencher};
+    pub type B<'a> = &'a mut Bencher;
+
+    fn map_bench(b: B, len: usize) {
+        let num_strings = 1000;
+        let prime1 = 93;
+        let data: Vec<u8> = (0..prime1).cycle().take(len * num_strings).collect();
+        let data = black_box(data);
+
+        b.bytes = (len * num_strings) as u64;
+        b.iter(|| {
+            let mut map = BTreeMap::new();
+            for chunk in data.chunks(len) {
+                *map.entry(chunk).or_insert(0) += 1;
+            }
+            map
+        });
+    }
+
+    #[bench] fn mapcount_000000001(b: B) { map_bench(b, 1) }
+    #[bench] fn mapcount_000000002(b: B) { map_bench(b, 2) }
+    #[bench] fn mapcount_000000004(b: B) { map_bench(b, 4) }
+    #[bench] fn mapcount_000000008(b: B) { map_bench(b, 8) }
+    #[bench] fn mapcount_000000016(b: B) { map_bench(b, 16) }
+    #[bench] fn mapcount_000000032(b: B) { map_bench(b, 32) }
+    #[bench] fn mapcount_000000064(b: B) { map_bench(b, 64) }
+    #[bench] fn mapcount_000000128(b: B) { map_bench(b, 128) }
+    #[bench] fn mapcount_000000256(b: B) { map_bench(b, 256) }
+    #[bench] fn mapcount_000000512(b: B) { map_bench(b, 512) }
+    #[bench] fn mapcount_000001024(b: B) { map_bench(b, 1024) }
+    #[bench] fn mapcount_000002048(b: B) { map_bench(b, 2048) }
+    #[bench] fn mapcount_000004096(b: B) { map_bench(b, 4096) }
+    #[bench] fn mapcount_000008000(b: B) { map_bench(b, 8000) }
+    #[bench] fn mapcount_000016000(b: B) { map_bench(b, 16_000) }
+    #[bench] fn mapcount_000032000(b: B) { map_bench(b, 32_000) }
+    #[bench] fn mapcount_000064000(b: B) { map_bench(b, 64_000) }
+    // #[bench] fn mapcount_001000000(b: B) { map_bench(b, 1_000_000) }
+
+}
 

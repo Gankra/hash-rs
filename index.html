@@ -4,10 +4,23 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/dygraph/1.1.1/dygraph-combined.js"></script>
 </head>
 <body id="inject">
+<p>
+  These are benchmarks of how the different Rust hashing algorithm implementations
+  compare. In particular, they are using the Hasher interface, which may not be
+  optimal for all algorithms.
+</p>
+
+<p>
+  Implementation quality may also vary.
+</p>
+
+<p>
+  <a href="https://github.com/Gankro/hash-rs">Source Can be Found Here</a>
+</p>
 
 <script type="text/javascript">
 
-function makeBench(name, title) {
+function makeBench(name, title, xLabel) {
   var benchDiv = document.createElement("div");
   var timeDiv = makeDiv();
   var tputDiv = makeDiv();
@@ -22,13 +35,13 @@ function makeBench(name, title) {
   document.getElementById("inject").appendChild(benchDiv);
 
   makeGraph("Time (lower is better)",
-            "bytes hashed",
+            xLabel,
             "time (ns)",
             name + "-time.csv",
             timeDiv);
 
   makeGraph("Throughput (higher is better)",
-            "bytes hashed",
+            xLabel,
             "throughput (MB/s)",
             name + "-throughput.csv",
             tputDiv);
@@ -60,7 +73,14 @@ function makeGraph(title, xLabel, yLabel, csv, div) {
   );
 }
 
-makeBench("bytes", "Hashing an array of bytes");
+makeBench("bytes",
+          "Hashing an array of bytes",
+          "bytes hashed");
+
+makeBench("mapcount",
+          "Counting number of occurrences of 1000 byte-strings",
+          "bytes per string");
+
 </script>
 </body>
 </html>
