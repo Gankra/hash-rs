@@ -100,8 +100,12 @@ makeBench("bytes",
           "Hashing an array of bytes",
           "bytes hashed");
 
-makeBench("mapcount",
-          "Counting number of occurrences of 1000 byte-strings",
+makeBench("mapcountdense",
+          "Counting number of occurrences of 1000 byte-strings (mostly duplicates)",
+          "bytes per string");
+
+makeBench("mapcountsparse",
+          "Counting number of occurrences of 1000 byte-strings (mostly unique)",
           "bytes per string");
 
 </script>
