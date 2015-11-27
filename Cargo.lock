@@ -3,7 +3,7 @@ name = "hash-rs"
 version = "0.1.0"
 dependencies = [
  "blake2-rfc 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "farmhash 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "farmhash 1.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "fnv 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "murmurhash3 0.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 0.1.41 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -42,25 +42,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "farmhash"
-version = "1.1.2"
+version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "time 0.1.32 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 
 [[package]]
 name = "fnv"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "kernel32-sys"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "winapi 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "winapi-build 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 
 [[package]]
 name = "libc"
@@ -104,16 +92,6 @@ dependencies = [
 name = "regex-syntax"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "time"
-version = "0.1.32"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "kernel32-sys 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "winapi 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 
 [[package]]
 name = "twox-hash"
