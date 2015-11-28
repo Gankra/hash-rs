@@ -238,10 +238,10 @@ macro_rules! hash_benches {
     }
 }
 
-// #[cfg(test)] mod sip { hash_benches!{Sip} }
-// #[cfg(test)] mod xx { hash_benches!{Xx} }
-// #[cfg(test)] mod farm { hash_benches!{Farm} }
-// #[cfg(test)] mod fnv { hash_benches!{Fnv} }
+#[cfg(test)] mod sip { hash_benches!{Sip} }
+#[cfg(test)] mod xx { hash_benches!{Xx} }
+#[cfg(test)] mod farm { hash_benches!{Farm} }
+#[cfg(test)] mod fnv { hash_benches!{Fnv} }
 #[cfg(test)] mod horner { hash_benches!{HornerHasher} }
 
 // one day?
@@ -251,7 +251,7 @@ macro_rules! hash_benches {
 // #[cfg(test)] mod murmur { hash_benches!{MurMur}}
 
 
-/*
+
 #[cfg(test)]
 mod btree {
     use std::collections::BTreeMap;
@@ -329,4 +329,3 @@ mod btree {
     #[bench] fn mapcountdense_000032000(b: B) { map_bench_dense(b, 32_000) }
     #[bench] fn mapcountdense_000064000(b: B) { map_bench_dense(b, 64_000) }
 }
-*/
