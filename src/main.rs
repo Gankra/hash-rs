@@ -1,3 +1,4 @@
+#![feature(asm)]
 #![feature(test)]
 #![cfg_attr(test, feature(hashmap_hasher))]
 #![allow(unused_imports, dead_code)]
@@ -10,6 +11,8 @@ extern crate fnv as _fnv;
 extern crate blake2_rfc;
 extern crate test;
 extern crate regex;
+
+mod multiply_shift;
 
 use std::process::Command;
 use std::io::Result as IoResult;
@@ -115,6 +118,7 @@ macro_rules! hash_benches {
         use farmhash::FarmHasher as Farm;
         use std::hash::Hasher;
         use std::collections::hash_state::{DefaultState, HashState};
+        use multiply_shift::HornerHasher;
 
         use std::collections::HashMap;
         use test::{black_box, Bencher};
@@ -153,7 +157,7 @@ macro_rules! hash_benches {
                 map
             });
         }
-/*
+
         #[bench] fn bytes_000000001(b: B) { hasher_bench::<$Impl>(b, 1) }
         #[bench] fn bytes_000000002(b: B) { hasher_bench::<$Impl>(b, 2) }
         #[bench] fn bytes_000000004(b: B) { hasher_bench::<$Impl>(b, 4) }
@@ -172,8 +176,8 @@ macro_rules! hash_benches {
         #[bench] fn bytes_000032000(b: B) { hasher_bench::<$Impl>(b, 32_000) }
         #[bench] fn bytes_000064000(b: B) { hasher_bench::<$Impl>(b, 64_000) }
         #[bench] fn bytes_001000000(b: B) { hasher_bench::<$Impl>(b, 1_000_000) }
-*/
 
+/*
         #[bench] fn mapcount_000000001(b: B) { map_bench::<$Impl>(b, 1) }
         #[bench] fn mapcount_000000002(b: B) { map_bench::<$Impl>(b, 2) }
         #[bench] fn mapcount_000000004(b: B) { map_bench::<$Impl>(b, 4) }
@@ -192,6 +196,7 @@ macro_rules! hash_benches {
         #[bench] fn mapcount_000032000(b: B) { map_bench::<$Impl>(b, 32_000) }
         #[bench] fn mapcount_000064000(b: B) { map_bench::<$Impl>(b, 64_000) }
         // #[bench] fn mapcount_001000000(b: B) { map_bench::<$Impl>(b, 1_000_000) }
+*/
     }
 }
 
@@ -199,6 +204,7 @@ macro_rules! hash_benches {
 #[cfg(test)] mod xx { hash_benches!{Xx} }
 #[cfg(test)] mod farm { hash_benches!{Farm} }
 #[cfg(test)] mod fnv { hash_benches!{Fnv} }
+#[cfg(test)] mod horner { hash_benches!{HornerHasher} }
 
 // one day?
 
@@ -206,6 +212,7 @@ macro_rules! hash_benches {
 // #[cfg(test)] mod blake2s { hash_benches!{Blake2s} }
 // #[cfg(test)] mod murmur { hash_benches!{MurMur}}
 
+/*
 #[cfg(test)]
 mod btree {
     use std::collections::BTreeMap;
@@ -248,4 +255,4 @@ mod btree {
     // #[bench] fn mapcount_001000000(b: B) { map_bench(b, 1_000_000) }
 
 }
-
+*/
