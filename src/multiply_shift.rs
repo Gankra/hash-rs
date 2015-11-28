@@ -18,12 +18,12 @@ use std::hash::Hasher;
 
 // This is called a "Horner" hasher because the iterated
 // multiply-shift operation resembles Horner's method for evaluating
-// polynomials. In fact, we are computing, more or less, 
+// polynomials. In fact, we are computing, more or less,
 //
 // sum_i (h0 ^ i) \floor{xi * h / 2^64}
 //
 // where xi is the ith word of the key being hashed.
-// 
+//
 // TODO: explain that equivalence in more detail.
 pub struct HornerHasher {
     // A randomly-chosen odd 128-bit number. h0 holds the
@@ -45,7 +45,7 @@ impl Default for HornerHasher {
         // h0 and h1 should be populated from a random source like
         // rand::os::OsRng::next_u64, but this is done in the hash map
         // constructor.
-        return HornerHasher {h0: 4167967182414233411, 
+        return HornerHasher {h0: 4167967182414233411,
                              h1: 15315631059493996859,
                              result: 0, accum: 0, count: 0};
     }
@@ -59,12 +59,13 @@ impl Default for HornerHasher {
 #[inline(always)]
 fn hi64mul(x: u64, y: u64) -> u64 {
     let _lo: u64; let hi: u64;
-    unsafe { asm!("mulq $3" 
-                  : "=rm" (_lo), "=r" (hi) 
-                  : "0rm" (x), "rm" (y) 
+    unsafe { asm!("mulq $2"
+                  : "={rax}" (_lo), "={rdx}" (hi)
+                  : "rm" (x), "{rax}" (y)
                   : "cc" :); }
-    return hi;
+    hi
 }
+
 
 // Multiply two 128-bit numbers and write 64 bits of the product to
 // 'result'. The bits written are those starting from the 64th least
@@ -91,7 +92,7 @@ unsafe fn load_u64_le(buf: &[u8], i: usize) -> u64 {
 }
 
 impl Hasher for HornerHasher {
-    
+
     fn finish(&self) -> u64 {
         // Hashes any characters waiting in self.accum and also hashes
         // with the length of the string to prevent engineered
@@ -106,13 +107,13 @@ impl Hasher for HornerHasher {
 
     fn write(&mut self, bytes: &[u8]) {
         let mut i = 0;
-        
+
         // Fill up self.accum if it is not full.
         let accum = &mut self.accum as *mut u64 as *mut u8;
         while (self.count & 7) > 0 && i < bytes.len() {
             unsafe {
-                *(accum.offset((self.count & 7) as isize) as *mut u8) 
-                    = bytes[i]; 
+                *(accum.offset((self.count & 7) as isize) as *mut u8)
+                    = bytes[i];
             }
             i += 1;
             self.count += 1;
@@ -125,22 +126,22 @@ impl Hasher for HornerHasher {
             mult_hi128(&mut self.result, self.accum, self.h0, self.h1);
             self.accum = 0;
         }
-        
+
         // This is the main loop: for each 64-bits we pull from bytes,
         // hash it into self.result.
         while i + 7 < bytes.len() {
-            mult_hi128(&mut self.result, 
+            mult_hi128(&mut self.result,
                        unsafe {load_u64_le(bytes, i)},
-                       self.h0, 
+                       self.h0,
                        self.h1);
             i += 8;
         }
-        
+
         // Add in the remaining characters to self.accum.
         while i < bytes.len() {
-            unsafe { 
-                *(accum.offset((8 + i - bytes.len()) as isize) as *mut u8) 
-                    = bytes[i]; 
+            unsafe {
+                *(accum.offset((8 + i - bytes.len()) as isize) as *mut u8)
+                    = bytes[i];
             }
             i += 1;
         }
