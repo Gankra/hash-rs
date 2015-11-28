@@ -10,6 +10,10 @@
 // TODO: accumulating four hash values at once increases the speed on
 // my machine, but it also makes the code more complex.
 
+
+use std::intrinsics::copy_nonoverlapping;
+//#[stable(feature = "rust1", since = "1.0.0")]
+//pub use intrinsics::copy_nonoverlapping;
 use std::hash::Hasher;
 
 // This is called a "Horner" hasher because the iterated
@@ -73,6 +77,19 @@ fn mult_hi128(result: &mut u64, accum: u64, h0: u64, h1: u64) {
         .wrapping_add(hi64mul(*result, h0))
 }
 
+/// Load a full u64 word from a byte stream, in LE order. Use
+/// `copy_nonoverlapping` to let the compiler generate the most efficient way
+/// to load u64 from a possibly unaligned address.
+///
+/// Unsafe because: unchecked indexing at i..i+8
+#[inline]
+unsafe fn load_u64_le(buf: &[u8], i: usize) -> u64 {
+    debug_assert!(i + 8 <= buf.len());
+    let mut data = 0u64;
+    copy_nonoverlapping(buf.get_unchecked(i), &mut data as *mut _ as *mut u8, 8);
+    data
+}
+
 impl Hasher for HornerHasher {
     
     fn finish(&self) -> u64 {
@@ -113,7 +130,7 @@ impl Hasher for HornerHasher {
         // hash it into self.result.
         while i + 7 < bytes.len() {
             mult_hi128(&mut self.result, 
-                       unsafe {*(&bytes[i] as *const u8 as *const u64)}, 
+                       unsafe {load_u64_le(bytes, i)},
                        self.h0, 
                        self.h1);
             i += 8;
