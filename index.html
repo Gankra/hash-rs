@@ -7,6 +7,9 @@
 .dygraph-legend {
   background: none !important;
 }
+p {
+  max-width: 60em;
+}
 </style>
 
 </head>
@@ -19,7 +22,10 @@
 
 <p>
   Numbers are generated from a MacBook Pro (x64 OSX) with a 2.8 GHz Intel Core
-  i7 (Haswell) and 16GB of RAM.
+  i7 (Haswell) and 16GB of RAM. This is unfortunately quite important, as
+  even different cpu revisions by the same manufacturer (e.g. Haswell vs Sandy Bridge)
+  can produce significantly different results for these functions. As always,
+  bench your workload on your hardware for best results.
 </p>
 
 <p>
@@ -30,6 +36,69 @@
 
 <p>
   <a href="https://github.com/Gankro/hash-rs">Source Can be Found Here</a>
+</p>
+
+<p>
+The hash functions on display are:
+</p>
+
+<p>
+<strong>SipHash 2-4 (sip)</strong>: This is the state-of-the-art for hashing that is
+completely resistant against even theoretical hash flooding DDOS attacks when
+paired  with a random seed. While most applications probably do not require
+this, it's important for some usecases (for instance, many webservers can be
+completely locked up by POST requests with colliding keys). Since this is a
+relatively obscure attack, but quite costly when applicable, we believe that
+it's important to default to such a hash function. As such, this is the default hasher
+used by Rust's HashMap, but it can be overloaded. Sip's performance is overall
+mediocre but consistent. As such, it's not an awful default.
+</p>
+
+<p>
+Performance could be gained by moving to SipHash 2-3, which has slightly inferior
+cryptographic properties, but is sufficient for preventing flooding.
+</p>
+
+<p>
+<strong>Fowler-Noll-Vo (fnv)</strong>: A hash function with excellent distribution, but no particular
+cryptographic properties. FNV is the best at small inputs, but does terribly on large
+inputs. Since small inputs are much more common, it's the
+Rust community's most popular override for SipHash where security doesn't matter.
+The Rust compiler itself uses this function.
+</p>
+
+<p>
+<strong>xxHash (xx)</strong>: Like fnv, a hash function with good distribution, but no crypto.
+It's our best performer for large inputs, and performs strongly on small ones.
+</p>
+
+<p>
+<strong>FarmHash (farm)</strong>: Another decent distribution, but no crypto. This algorithm is
+intended to perform excellently on all sizes of input, but is massively pessimized
+by Rust's streaming hashing architecture, as it's designed to process the input
+in one shot, forcing the entire input to be buffered in a growable array. In order
+for it to compete, Rust needs to adopt a solution that allows the top-level type
+in a hashing to identify whether it can be hashed in a one-shot manner, for a
+specialized result. However this can lead to confusing or inconsistent results,
+particularly if hashing derivation is done incorrectly.
+</p>
+
+<p>
+<strong>Horner (horner)</strong>: A universal hash function without the full cryptographic
+strength of SipHash. It defends against all hash flooding attacks that have
+been demonstrated in practice, but is theoretically vulnerable to a timing
+attack if the attacker is allowed to continuously query against maps with the
+same seed. It's unclear how practical this attack is under ideal conditions for
+the attacker, but for most situations this hasher is likely sufficient.
+Performance is roughly on-par with xxHash.
+</p>
+
+<p>
+<strong>btree</strong> is not a hash function at all, but rather feeding the same
+inputs into Rust's BTreeMap, which is based on comparisons instead of hashing. This
+serves as a baseline, as well as a demonstration of how ordered data structures
+can completely stomp unordered data structures under particular workloads, even
+when not used for their ordering properties.
 </p>
 
 <script type="text/javascript">
