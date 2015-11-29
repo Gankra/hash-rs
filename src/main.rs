@@ -15,8 +15,9 @@ extern crate rand;
 
 mod multiply_shift;
 
-use std::process::Command;
+use std::process::{Stdio, Command};
 use std::io::Result as IoResult;
+use std::io::stdout;
 use std::fs::File;
 use regex::Regex;
 
@@ -36,21 +37,29 @@ struct DataPoint {
 }
 
 fn do_it() -> IoResult<()> {
-    let output = try!(Command::new("cargo")
-        .arg("bench")
-        .output());
-
-    let stdout = String::from_utf8(output.stdout).unwrap();
+    let child = Command::new("cargo")
+                         .arg("bench")
+                         .stdout(Stdio::piped())
+                         .spawn()
+                         .unwrap_or_else(|e| { panic!("failed to execute process: {}", e) });
+    let mut out = child.stdout.unwrap();
+    let mut read_buf = [0u8; 64];
+    let mut out_buf: Vec<u8> = Vec::new();
+    while let Ok(size) = out.read(&mut read_buf) {
+        if size == 0 {
+            break;
+        }
+        try!(stdout().write_all(&read_buf[..size]));
+        out_buf.extend(&read_buf[..size]);
+    }
 
     let re = Regex::new(r#"test (.*)::(.*)_(\d*) .*bench:\s*(.*) ns/iter \(\+/- (.*)\) = (\d*) MB/s.*"#).unwrap();
 
     println!("Output:");
-    println!("{}", stdout);
-
 
     let mut data = HashMap::new();
 
-    for cap in re.captures_iter(&stdout) {
+    for cap in re.captures_iter(&String::from_utf8(out_buf).unwrap()) {
         println!("{}", cap.at(0).unwrap());
         let hasher = String::from(cap.at(1).unwrap());
         let bench_class = String::from(cap.at(2).unwrap());
