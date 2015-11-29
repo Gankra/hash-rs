@@ -203,11 +203,7 @@ macro_rules! hash_benches {
         #[bench] fn bytes_000001024(b: B) { hasher_bench::<$Impl>(b, 1024) }
         #[bench] fn bytes_000002048(b: B) { hasher_bench::<$Impl>(b, 2048) }
         #[bench] fn bytes_000004096(b: B) { hasher_bench::<$Impl>(b, 4096) }
-        #[bench] fn bytes_000008000(b: B) { hasher_bench::<$Impl>(b, 8000) }
-        #[bench] fn bytes_000016000(b: B) { hasher_bench::<$Impl>(b, 16_000) }
-        #[bench] fn bytes_000032000(b: B) { hasher_bench::<$Impl>(b, 32_000) }
-        #[bench] fn bytes_000064000(b: B) { hasher_bench::<$Impl>(b, 64_000) }
-//      #[bench] fn bytes_001000000(b: B) { hasher_bench::<$Impl>(b, 1_000_000) }
+        #[bench] fn bytes_000008192(b: B) { hasher_bench::<$Impl>(b, 8192) }
 
         #[bench] fn mapcountsparse_000000001(b: B) { map_bench_sparse::<$Impl>(b, 1) }
         #[bench] fn mapcountsparse_000000002(b: B) { map_bench_sparse::<$Impl>(b, 2) }
@@ -222,10 +218,7 @@ macro_rules! hash_benches {
         #[bench] fn mapcountsparse_000001024(b: B) { map_bench_sparse::<$Impl>(b, 1024) }
         #[bench] fn mapcountsparse_000002048(b: B) { map_bench_sparse::<$Impl>(b, 2048) }
         #[bench] fn mapcountsparse_000004096(b: B) { map_bench_sparse::<$Impl>(b, 4096) }
-        #[bench] fn mapcountsparse_000008000(b: B) { map_bench_sparse::<$Impl>(b, 8000) }
-        #[bench] fn mapcountsparse_000016000(b: B) { map_bench_sparse::<$Impl>(b, 16_000) }
-        #[bench] fn mapcountsparse_000032000(b: B) { map_bench_sparse::<$Impl>(b, 32_000) }
-        #[bench] fn mapcountsparse_000064000(b: B) { map_bench_sparse::<$Impl>(b, 64_000) }
+        #[bench] fn mapcountsparse_000008192(b: B) { map_bench_sparse::<$Impl>(b, 8192) }
 
         #[bench] fn mapcountdense_000000001(b: B) { map_bench_dense::<$Impl>(b, 1) }
         #[bench] fn mapcountdense_000000002(b: B) { map_bench_dense::<$Impl>(b, 2) }
@@ -240,11 +233,8 @@ macro_rules! hash_benches {
         #[bench] fn mapcountdense_000001024(b: B) { map_bench_dense::<$Impl>(b, 1024) }
         #[bench] fn mapcountdense_000002048(b: B) { map_bench_dense::<$Impl>(b, 2048) }
         #[bench] fn mapcountdense_000004096(b: B) { map_bench_dense::<$Impl>(b, 4096) }
-        #[bench] fn mapcountdense_000008000(b: B) { map_bench_dense::<$Impl>(b, 8000) }
-        #[bench] fn mapcountdense_000016000(b: B) { map_bench_dense::<$Impl>(b, 16_000) }
-        #[bench] fn mapcountdense_000032000(b: B) { map_bench_dense::<$Impl>(b, 32_000) }
-        #[bench] fn mapcountdense_000064000(b: B) { map_bench_dense::<$Impl>(b, 64_000) }
-    }
+        #[bench] fn mapcountdense_000008192(b: B) { map_bench_dense::<$Impl>(b, 8192) }
+   }
 }
 
 #[cfg(test)] mod sip { hash_benches!{Sip} }
@@ -315,10 +305,7 @@ mod btree {
     #[bench] fn mapcountsparse_000001024(b: B) { map_bench_sparse(b, 1024) }
     #[bench] fn mapcountsparse_000002048(b: B) { map_bench_sparse(b, 2048) }
     #[bench] fn mapcountsparse_000004096(b: B) { map_bench_sparse(b, 4096) }
-    #[bench] fn mapcountsparse_000008000(b: B) { map_bench_sparse(b, 8000) }
-    #[bench] fn mapcountsparse_000016000(b: B) { map_bench_sparse(b, 16_000) }
-    #[bench] fn mapcountsparse_000032000(b: B) { map_bench_sparse(b, 32_000) }
-    #[bench] fn mapcountsparse_000064000(b: B) { map_bench_sparse(b, 64_000) }
+    #[bench] fn mapcountsparse_000008192(b: B) { map_bench_sparse(b, 8192) }
 
     #[bench] fn mapcountdense_000000001(b: B) { map_bench_dense(b, 1) }
     #[bench] fn mapcountdense_000000002(b: B) { map_bench_dense(b, 2) }
@@ -333,8 +320,5 @@ mod btree {
     #[bench] fn mapcountdense_000001024(b: B) { map_bench_dense(b, 1024) }
     #[bench] fn mapcountdense_000002048(b: B) { map_bench_dense(b, 2048) }
     #[bench] fn mapcountdense_000004096(b: B) { map_bench_dense(b, 4096) }
-    #[bench] fn mapcountdense_000008000(b: B) { map_bench_dense(b, 8000) }
-    #[bench] fn mapcountdense_000016000(b: B) { map_bench_dense(b, 16_000) }
-    #[bench] fn mapcountdense_000032000(b: B) { map_bench_dense(b, 32_000) }
-    #[bench] fn mapcountdense_000064000(b: B) { map_bench_dense(b, 64_000) }
+    #[bench] fn mapcountdense_000008192(b: B) { map_bench_dense(b, 8192) }
 }
