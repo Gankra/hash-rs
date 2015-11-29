@@ -15,6 +15,7 @@ use std::intrinsics::copy_nonoverlapping;
 //#[stable(feature = "rust1", since = "1.0.0")]
 //pub use intrinsics::copy_nonoverlapping;
 use std::hash::Hasher;
+use std::cmp::min;
 
 // This is called a "Horner" hasher because the iterated
 // multiply-shift operation resembles Horner's method for evaluating
@@ -27,15 +28,12 @@ use std::hash::Hasher;
 // TODO: explain that equivalence in more detail.
 pub struct HornerHasher {
     // A randomly-chosen odd 128-bit number. h0 holds the
-    // least-significant bits.
+    // least-significant bits, so must be odd.
     h0: u64,
     h1: u64,
     // The hash value we have accumulated so far.
-    result: u64,
-    // We accumulate 8 bytes, then update 'result'. accum holds those
-    // bytes in its least-significant bits. This can be thought of
-    // (and will be treated) as both a u64 and a [u8; 8].
-    accum: u64,
+    result: [u64; 4],
+    accum: [u64; 4],
     // The number of bytes we have seen so far
     count: u64
 }
@@ -45,9 +43,13 @@ impl Default for HornerHasher {
         // h0 and h1 should be populated from a random source like
         // rand::os::OsRng::next_u64, but this is done in the hash map
         // constructor.
+        //
+        // h0 must be odd.
         return HornerHasher {h0: 4167967182414233411,
                              h1: 15315631059493996859,
-                             result: 0, accum: 0, count: 0};
+                             result: [0,0,0,0],
+                             accum: [0,0,0,0],
+                             count: 0};
     }
 }
 
@@ -61,7 +63,7 @@ fn hi64mul(x: u64, y: u64) -> u64 {
     let _lo: u64; let hi: u64;
     unsafe { asm!("mulq $2"
                   : "={rax}" (_lo), "={rdx}" (hi)
-                  : "rm" (x), "{rax}" (y)
+                  : "r" (x), "{rax}" (y)
                   : "cc" :); }
     hi
 }
@@ -78,13 +80,13 @@ fn mult_hi128(result: &mut u64, accum: u64, h0: u64, h1: u64) {
         .wrapping_add(hi64mul(*result, h0))
 }
 
-/// Load a full u64 word from a byte stream, in LE order. Use
-/// `copy_nonoverlapping` to let the compiler generate the most efficient way
-/// to load u64 from a possibly unaligned address.
+/// Load a full u64 word from a byte stream. Use `copy_nonoverlapping`
+/// to let the compiler generate the most efficient way to load u64
+/// from a possibly unaligned address.
 ///
 /// Unsafe because: unchecked indexing at i..i+8
 #[inline]
-unsafe fn load_u64_le(buf: &[u8], i: usize) -> u64 {
+unsafe fn load_u64(buf: &[u8], i: usize) -> u64 {
     debug_assert!(i + 8 <= buf.len());
     let mut data = 0u64;
     copy_nonoverlapping(buf.get_unchecked(i), &mut data as *mut _ as *mut u8, 8);
@@ -94,56 +96,68 @@ unsafe fn load_u64_le(buf: &[u8], i: usize) -> u64 {
 impl Hasher for HornerHasher {
 
     fn finish(&self) -> u64 {
-        // Hashes any characters waiting in self.accum and also hashes
-        // with the length of the string to prevent engineered
-        // collisions by prepending '\000's to hashed keys.
-        let mut result: u64 = self.result;
-        if (self.count & 7) > 0 {
-            mult_hi128(&mut result, self.accum, self.h0, self.h1);
+        // Hashes any data waiting in self.accum and also hashes with
+        // the length of the string to prevent engineered collisions
+        // by prepending '\000's to hashed keys.
+        let mut i: usize = 0;
+        let mut result: [u64; 4] = [self.result[0], self.result[1], self.result[2], self.result[3]];
+        while i < (((self.count & 31) + 7)/8) as usize {
+            mult_hi128(&mut result[i], self.accum[i], self.h0, self.h1);
+            i += 1;
         }
-        mult_hi128(&mut result, self.count, self.h0, self.h1);
-        return result;
+        let tmp1 = result[1];
+        let tmp3 = result[3];
+        mult_hi128(&mut result[0], tmp1, self.h0, self.h1);
+        mult_hi128(&mut result[2], tmp3, self.h0, self.h1);
+        mult_hi128(&mut result[0], self.count, self.h0, self.h1);
+        let f1 = result[1];
+        mult_hi128(&mut result[0], f1, self.h0, self.h1);
+        return result[0];
     }
 
     fn write(&mut self, bytes: &[u8]) {
         let mut i = 0;
 
-        // Fill up self.accum if it is not full.
-        let accum = &mut self.accum as *mut u64 as *mut u8;
-        while (self.count & 7) > 0 && i < bytes.len() {
-            unsafe {
-                *(accum.offset((self.count & 7) as isize) as *mut u8)
-                    = bytes[i];
-            }
-            i += 1;
-            self.count += 1;
-        }
+        // Fill up self.accum, as much as possible
+        let n: u64 = min(32 - (self.count & 31), bytes.len() as u64);
+        unsafe {copy_nonoverlapping(bytes.get_unchecked(i), &mut self.accum[0] as *mut u64 as *mut u8, n as usize);}
+        self.count += n;
+        i += n as usize;
 
         self.count += (bytes.len() - i) as u64;
 
-        // If we touched self.accum, hash it and reset it.
-        if i > 0 {
-            mult_hi128(&mut self.result, self.accum, self.h0, self.h1);
-            self.accum = 0;
+        // If we filled self.accum, hash it and reset it.
+        if 0 == self.count & 31 {
+            mult_hi128(&mut self.result[0], self.accum[0], self.h0, self.h1);
+            mult_hi128(&mut self.result[1], self.accum[1], self.h0, self.h1);
+            mult_hi128(&mut self.result[2], self.accum[2], self.h0, self.h1);
+            mult_hi128(&mut self.result[3], self.accum[3], self.h0, self.h1);
+            self.accum[0] = 0;
+            self.accum[1] = 0;
+            self.accum[2] = 0;
+            self.accum[3] = 0;
         }
 
-        // This is the main loop: for each 64-bits we pull from bytes,
-        // hash it into self.result.
-        while i + 7 < bytes.len() {
-            mult_hi128(&mut self.result,
-                       unsafe {load_u64_le(bytes, i)},
-                       self.h0,
-                       self.h1);
-            i += 8;
+        // This is the main loop: for each 4 64-byte words we pull
+        // from bytes, hash it into self.result.
+        while i + 31 < bytes.len() {
+            mult_hi128(&mut self.result[0],
+                       unsafe {load_u64(bytes, i)},
+                       self.h0, self.h1);
+            mult_hi128(&mut self.result[1],
+                       unsafe {load_u64(bytes, i + 8)},
+                       self.h0, self.h1);
+            mult_hi128(&mut self.result[2],
+                       unsafe {load_u64(bytes, i + 16)},
+                       self.h0, self.h1);
+            mult_hi128(&mut self.result[3],
+                       unsafe {load_u64(bytes, i + 24)},
+                       self.h0, self.h1);
+            i += 32;
         }
 
-        // Add in the remaining characters to self.accum.
-        while i < bytes.len() {
-            unsafe {
-                *(accum.offset((8 + i - bytes.len()) as isize) as *mut u8)
-                    = bytes[i];
-            }
-            i += 1;
-        }
+        // Add in the remaining data to self.accum.
+        let n = bytes.len() - i;
+        unsafe {copy_nonoverlapping(bytes.get_unchecked(i), &mut self.accum[0] as *mut u64 as *mut u8, n);}
     }
 }
