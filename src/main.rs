@@ -31,8 +31,8 @@ fn main() {
 
 struct DataPoint {
     magnitude: u64,
-    average: u64,
-    variance: u64,
+    average: f64,
+    variance: f64,
     throughput: u64,
 }
 
@@ -68,12 +68,13 @@ fn do_it() -> IoResult<()> {
             .or_insert(HashMap::new())
             .entry(hasher)
             .or_insert(vec![])
-            .push(DataPoint {
-                magnitude:  cap.at(3).unwrap().split(",").collect::<String>().parse().unwrap(),
-                average:    cap.at(4).unwrap().split(",").collect::<String>().parse().unwrap(),
-                variance:   cap.at(5).unwrap().split(",").collect::<String>().parse().unwrap(),
-                throughput: cap.at(6).unwrap().split(",").collect::<String>().parse().unwrap(),
-            });
+            .push({let magnitude = cap.at(3).unwrap().split(",").collect::<String>().parse().unwrap();
+                   DataPoint {
+                       magnitude:  magnitude,
+                       average:    cap.at(4).unwrap().split(",").collect::<String>().parse::<f64>().unwrap()/(magnitude as f64),
+                       variance:   cap.at(5).unwrap().split(",").collect::<String>().parse::<f64>().unwrap()/(magnitude as f64),
+                       throughput: cap.at(6).unwrap().split(",").collect::<String>().parse().unwrap(),
+                   }});
     }
 
 
