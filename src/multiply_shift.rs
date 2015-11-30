@@ -75,9 +75,12 @@ fn hi64mul(x: u64, y: u64) -> u64 {
 // multiply-shift hashing ala Dietzfelbinger et al.
 #[inline(always)]
 fn mult_hi128(result: &mut u64, accum: u64, h0: u64, h1: u64) {
-    *result = (accum.wrapping_mul(h0))
-        .wrapping_add(result.wrapping_mul(h1))
-        .wrapping_add(hi64mul(*result, h0))
+    // Loosely following Woelfel's "A Construction Method for
+    // Optimally Universal Hash Families and its Consequences for the
+    // Existence of RBIBDs", along with multiply-add-shift hashing, we
+    // hash accum by multiplying it by h, then shifting right. We hash
+    // result and accum by hashing accum and adding result.
+    *result = result.wrapping_add(accum.wrapping_mul(h1).wrapping_add(hi64mul(accum, h0)));
 }
 
 /// Load a full u64 word from a byte stream. Use `copy_nonoverlapping`
