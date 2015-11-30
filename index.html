@@ -98,7 +98,8 @@ Performance is roughly on-par with xxHash.
 inputs into Rust's BTreeMap, which is based on comparisons instead of hashing. This
 serves as a baseline, as well as a demonstration of how ordered data structures
 can completely stomp unordered data structures under particular workloads, even
-when not used for their ordering properties.
+when not used for their ordering properties. <strong>btreenew</strong> is an
+experimental rewrite of std's btree that is kicking its butt.
 </p>
 
 <script type="text/javascript">
@@ -160,6 +161,7 @@ function makeGraph(title, xLabel, yLabel, csv, div) {
         murmur: { color: "#cccc00" },
         city: { color: "#00cccc" },
         btree: { color: "#000000" },
+        btreenew: { color: "#aaaaaa" },
         horner: { color: "#884444" }
       },
     }
