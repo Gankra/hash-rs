@@ -96,11 +96,40 @@ unsafe fn load_u64(buf: &[u8], i: usize) -> u64 {
 impl Hasher for HornerHasher {
 
     fn finish(&self) -> u64 {
+        if self.count <= 8 {
+            let mut t1 = self.accum[0];
+            mult_hi128(&mut t1, self.count, self.h0, self.h1);
+            return t1;
+        }
+        if self.count <= 16 {
+            let mut t1 = self.accum[0];
+            mult_hi128(&mut t1, self.accum[1], self.h0, self.h1);
+            mult_hi128(&mut t1, self.count, self.h0, self.h1);
+            return t1;
+        }
+        if self.count <= 24 {
+            let mut t1 = self.accum[0];
+            let mut t2 = self.accum[1];
+            mult_hi128(&mut t1, self.accum[2], self.h0, self.h1);
+            mult_hi128(&mut t2, self.count, self.h0, self.h1);
+            mult_hi128(&mut t1, t2, self.h0, self.h1);
+            return t1;
+        }
+        if self.count < 32 {
+            let mut t1 = self.accum[0];
+            let mut t2 = self.accum[1];
+            mult_hi128(&mut t1, self.accum[2], self.h0, self.h1);
+            mult_hi128(&mut t2, self.accum[3], self.h0, self.h1);
+            mult_hi128(&mut t1, self.count, self.h0, self.h1);
+            mult_hi128(&mut t1, t2, self.h0, self.h1);
+            return t1;
+        }
         // Hashes any data waiting in self.accum and also hashes with
         // the length of the string to prevent engineered collisions
         // by prepending '\000's to hashed keys.
         let mut i: usize = 0;
         let mut result: [u64; 4] = [self.result[0], self.result[1], self.result[2], self.result[3]];
+
         while i < (((self.count & 31) + 7)/8) as usize {
             mult_hi128(&mut result[i], self.accum[i], self.h0, self.h1);
             i += 1;
@@ -128,10 +157,17 @@ impl Hasher for HornerHasher {
 
         // If we filled self.accum, hash it and reset it.
         if 0 == self.count & 31 {
-            mult_hi128(&mut self.result[0], self.accum[0], self.h0, self.h1);
-            mult_hi128(&mut self.result[1], self.accum[1], self.h0, self.h1);
-            mult_hi128(&mut self.result[2], self.accum[2], self.h0, self.h1);
-            mult_hi128(&mut self.result[3], self.accum[3], self.h0, self.h1);
+            if 32 == self.count {
+                self.result[0] = self.accum[0];
+                self.result[1] = self.accum[1];
+                self.result[2] = self.accum[2];
+                self.result[3] = self.accum[3];
+            } else {
+                mult_hi128(&mut self.result[0], self.accum[0], self.h0, self.h1);
+                mult_hi128(&mut self.result[1], self.accum[1], self.h0, self.h1);
+                mult_hi128(&mut self.result[2], self.accum[2], self.h0, self.h1);
+                mult_hi128(&mut self.result[3], self.accum[3], self.h0, self.h1);
+            }
             self.accum[0] = 0;
             self.accum[1] = 0;
             self.accum[2] = 0;
