@@ -120,7 +120,12 @@ impl Hasher for HornerHasher {
 
         // Fill up self.accum, as much as possible
         let n: u64 = min(32 - (self.count & 31), bytes.len() as u64);
-        unsafe {copy_nonoverlapping(bytes.get_unchecked(i), &mut self.accum[0] as *mut u64 as *mut u8, n as usize);}
+        unsafe {
+            copy_nonoverlapping(bytes.get_unchecked(i),
+                                (&mut self.accum[0] as *mut u64 as *mut u8)
+                                .offset((self.count & 31) as isize),
+                                n as usize);
+        }
         self.count += n;
         i += n as usize;
 
