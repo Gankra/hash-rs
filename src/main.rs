@@ -5,7 +5,6 @@
 extern crate twox_hash;
 // extern crate murmurhash64;
 extern crate murmurhash3;
-extern crate farmhash;
 extern crate fnv as _fnv;
 extern crate blake2_rfc;
 extern crate test;
@@ -125,7 +124,6 @@ macro_rules! hash_benches {
         use blake2_rfc::blake2b::Blake2b;
         use blake2_rfc::blake2s::Blake2s;
         use _fnv::FnvHasher as Fnv;
-        use farmhash::FarmHasher as Farm;
         use std::hash::Hasher;
         use std::hash::{BuildHasherDefault, BuildHasher};
         use multiply_shift::HornerHasher;
@@ -302,7 +300,6 @@ macro_rules! tree_benches {
 
 #[cfg(test)] mod sip { hash_benches!{Sip} }
 #[cfg(test)] mod xx { hash_benches!{Xx} }
-#[cfg(test)] mod farm { hash_benches!{Farm} }
 #[cfg(test)] mod fnv { hash_benches!{Fnv} }
 #[cfg(test)] mod horner { hash_benches!{HornerHasher} }
 

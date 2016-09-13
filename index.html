@@ -73,17 +73,6 @@ It's our best performer for large inputs, and performs strongly on small ones.
 </p>
 
 <p>
-<strong>FarmHash (farm)</strong>: Another decent distribution, but no crypto. This algorithm is
-intended to perform excellently on all sizes of input, but is massively pessimized
-by Rust's streaming hashing architecture, as it's designed to process the input
-in one shot, forcing the entire input to be buffered in a growable array. In order
-for it to compete, Rust needs to adopt a solution that allows the top-level type
-in a hashing to identify whether it can be hashed in a one-shot manner, for a
-specialized result. However this can lead to confusing or inconsistent results,
-particularly if hashing derivation is done incorrectly.
-</p>
-
-<p>
 <strong>Horner (horner)</strong>: A universal hash function without the full cryptographic
 strength of SipHash. It defends against all hash flooding attacks that have
 been demonstrated in practice, but is theoretically vulnerable to a timing
@@ -99,6 +88,21 @@ inputs into Rust's BTreeMap, which is based on comparisons instead of hashing. T
 serves as a baseline, as well as a demonstration of how ordered data structures
 can completely stomp unordered data structures under particular workloads, even
 when not used for their ordering properties.
+</p>
+
+<p>
+The deliberately excluded hash functions are:
+</p>
+
+<p>
+<strong>FarmHash (farm)</strong>: Another decent distribution, but no crypto. This algorithm is
+intended to perform excellently on all sizes of input, but is massively pessimized
+by Rust's streaming hashing architecture, as it's designed to process the input
+in one shot, forcing the entire input to be buffered in a growable array. In order
+for it to compete, Rust needs to adopt a solution that allows the top-level type
+in a hashing to identify whether it can be hashed in a one-shot manner, for a
+specialized result. However this can lead to confusing or inconsistent results,
+particularly if hashing derivation is done incorrectly.
 </p>
 
 <script type="text/javascript">
@@ -156,7 +160,6 @@ function makeGraph(title, xLabel, yLabel, csv, div) {
         sip: { color: "#cc0000" },
         xx: { color: "#00cc00" },
         fnv: { color: "#0000cc" },
-        farm: { color: "#cc00cc" },
         murmur: { color: "#cccc00" },
         city: { color: "#00cccc" },
         btree: { color: "#000000" },

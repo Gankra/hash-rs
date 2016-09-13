@@ -7,7 +7,6 @@ authors = ["Alexis Beingessner <a.beingessner@gmail.com>"]
 twox-hash = "*"
 # murmurhash64 = "*"
 murmurhash3 = "*"
-farmhash = "*"
 fnv = "*"
 blake2-rfc = "*"
 regex = "*"
