@@ -11,7 +11,6 @@ extern crate blake2_rfc;
 extern crate test;
 extern crate regex;
 extern crate rand;
-extern crate btree_rewrite;
 
 mod multiply_shift;
 
@@ -161,7 +160,7 @@ macro_rules! hash_benches {
 
             b.bytes = (len * num_strings) as u64;
             b.iter(|| {
-                // don't reserve space to be fair to BTree
+                // don't reserve space to be fair to BTreeMap
                 let mut map = HashMap::with_hasher(BuildHasherDefault::<H>::default());
                 for chunk in data.chunks(len) {
                     *map.entry(chunk).or_insert(0) += 1;
@@ -181,7 +180,7 @@ macro_rules! hash_benches {
 
             b.bytes = (len * num_strings) as u64;
             b.iter(|| {
-                // don't reserve space to be fair to BTree
+                // don't reserve space to be fair to BTreeMap
                 let mut map = HashMap::with_hasher(BuildHasherDefault::<H>::default());
                 for chunk in data.chunks(len) {
                     *map.entry(chunk).or_insert(0) += 1;
@@ -233,8 +232,7 @@ macro_rules! hash_benches {
 
 macro_rules! tree_benches {
     ($Impl: ty) => {
-        use std::collections::BTreeMap as StdBTree;
-        use btree_rewrite::map::BTreeMap as NewBTree;
+        use std::collections::BTreeMap;
 
         use test::{black_box, Bencher};
         pub type B<'a> = &'a mut Bencher;
@@ -314,6 +312,4 @@ macro_rules! tree_benches {
 // #[cfg(test)] mod blake2s { hash_benches!{Blake2s} }
 // #[cfg(test)] mod murmur { hash_benches!{MurMur}}
 
-
-#[cfg(test)] mod btree { tree_benches!{StdBTree<&[u8], i32>} }
-#[cfg(test)] mod btreenew { tree_benches!{NewBTree<&[u8], i32>} }
+#[cfg(test)] mod btree { tree_benches!{BTreeMap<&[u8], i32>} }

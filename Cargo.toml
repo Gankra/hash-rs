@@ -3,9 +3,6 @@ name = "hash-rs"
 version = "0.1.0"
 authors = ["Alexis Beingessner <a.beingessner@gmail.com>"]
 
-[dependencies.btree-rewrite]
-git = "https://github.com/gereeter/btree-rewrite.git"
-
 [dependencies]
 twox-hash = "*"
 # murmurhash64 = "*"
