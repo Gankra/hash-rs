@@ -1,6 +1,5 @@
 #![feature(asm)]
 #![feature(test)]
-#![cfg_attr(test, feature(hashmap_hasher))]
 #![allow(unused_imports, dead_code)]
 
 extern crate twox_hash;
@@ -129,7 +128,7 @@ macro_rules! hash_benches {
         use _fnv::FnvHasher as Fnv;
         use farmhash::FarmHasher as Farm;
         use std::hash::Hasher;
-        use std::collections::hash_state::{DefaultState, HashState};
+        use std::hash::{BuildHasherDefault, BuildHasher};
         use multiply_shift::HornerHasher;
 
         use std::collections::HashMap;
@@ -140,13 +139,13 @@ macro_rules! hash_benches {
         fn hasher_bench<H>(b: B, len: usize)
         where H: Hasher + Default
         {
-            let hash_state = DefaultState::<H>::default();
+            let hash_state = BuildHasherDefault::<H>::default();
             let bytes: Vec<u8> = (0..100).cycle().take(len).collect();
             let bytes = black_box(bytes);
 
             b.bytes = bytes.len() as u64;
             b.iter(|| {
-                let mut hasher = hash_state.hasher();
+                let mut hasher = hash_state.build_hasher();
                 hasher.write(&bytes);
                 hasher.finish()
             });
@@ -163,7 +162,7 @@ macro_rules! hash_benches {
             b.bytes = (len * num_strings) as u64;
             b.iter(|| {
                 // don't reserve space to be fair to BTree
-                let mut map = HashMap::with_hash_state(DefaultState::<H>::default());
+                let mut map = HashMap::with_hasher(BuildHasherDefault::<H>::default());
                 for chunk in data.chunks(len) {
                     *map.entry(chunk).or_insert(0) += 1;
                 }
@@ -183,7 +182,7 @@ macro_rules! hash_benches {
             b.bytes = (len * num_strings) as u64;
             b.iter(|| {
                 // don't reserve space to be fair to BTree
-                let mut map = HashMap::with_hash_state(DefaultState::<H>::default());
+                let mut map = HashMap::with_hasher(BuildHasherDefault::<H>::default());
                 for chunk in data.chunks(len) {
                     *map.entry(chunk).or_insert(0) += 1;
                 }
@@ -318,5 +317,3 @@ macro_rules! tree_benches {
 
 #[cfg(test)] mod btree { tree_benches!{StdBTree<&[u8], i32>} }
 #[cfg(test)] mod btreenew { tree_benches!{NewBTree<&[u8], i32>} }
-
-
