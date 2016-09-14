@@ -20,13 +20,28 @@ p {
   optimal for all algorithms. Implementation quality may also vary.
 </p>
 
-<p>
-  Numbers are generated from a MacBook Pro (x64 OSX) with a 2.8 GHz Intel Core
-  i7 (Haswell) and 16GB of RAM. This is unfortunately quite important, as
-  even different cpu revisions by the same manufacturer (e.g. Haswell vs Sandy Bridge)
-  can produce significantly different results for these functions. As always,
-  bench your workload on your hardware for best results.
-</p>
+<table>
+  <thead>
+    <tr>
+      <th>OS</th>
+      <th>Bits</th>
+      <th>CPU</th>
+      <th>RAM</th>
+      <th>Rust Version</th>
+      <th>Benchmark Revision</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>OS X 10.11.6</td>
+      <td>64</td>
+      <td>2.3 GHz (I7-3615QM)</td>
+      <td>16 GiB</td>
+      <td>rustc 1.13.0-dev (1fca1ab0e 2016-09-10)</td>
+      <td>97e52d101ec17ca1fb2c570fc4c408530d90e999</td>
+    </tr>
+  </tbody>
+</table>
 
 <p>
   Variance bars excluded because this dang charting library was absolutely
