@@ -1,18 +1,16 @@
 #![feature(asm)]
 #![feature(test)]
-#![cfg_attr(test, feature(hashmap_hasher))]
+#![feature(sip_hash_13)]
 #![allow(unused_imports, dead_code)]
 
 extern crate twox_hash;
 // extern crate murmurhash64;
 extern crate murmurhash3;
-extern crate farmhash;
 extern crate fnv as _fnv;
 extern crate blake2_rfc;
 extern crate test;
 extern crate regex;
 extern crate rand;
-extern crate btree_rewrite;
 
 mod multiply_shift;
 
@@ -120,16 +118,16 @@ fn do_it() -> IoResult<()> {
 
 macro_rules! hash_benches {
     ($Impl: ty) => {
-        use std::hash::SipHasher as Sip;
+        use std::hash::SipHasher13 as Sip13;
+        use std::hash::SipHasher24 as Sip24;
         use twox_hash::XxHash as Xx;
         // use murmurhash64 as murmur2;
         // use murmurhash3::Murmur3State as Murmur3State;
         use blake2_rfc::blake2b::Blake2b;
         use blake2_rfc::blake2s::Blake2s;
         use _fnv::FnvHasher as Fnv;
-        use farmhash::FarmHasher as Farm;
         use std::hash::Hasher;
-        use std::collections::hash_state::{DefaultState, HashState};
+        use std::hash::{BuildHasherDefault, BuildHasher};
         use multiply_shift::HornerHasher;
 
         use std::collections::HashMap;
@@ -140,13 +138,13 @@ macro_rules! hash_benches {
         fn hasher_bench<H>(b: B, len: usize)
         where H: Hasher + Default
         {
-            let hash_state = DefaultState::<H>::default();
+            let hash_state = BuildHasherDefault::<H>::default();
             let bytes: Vec<u8> = (0..100).cycle().take(len).collect();
             let bytes = black_box(bytes);
 
             b.bytes = bytes.len() as u64;
             b.iter(|| {
-                let mut hasher = hash_state.hasher();
+                let mut hasher = hash_state.build_hasher();
                 hasher.write(&bytes);
                 hasher.finish()
             });
@@ -162,8 +160,8 @@ macro_rules! hash_benches {
 
             b.bytes = (len * num_strings) as u64;
             b.iter(|| {
-                // don't reserve space to be fair to BTree
-                let mut map = HashMap::with_hash_state(DefaultState::<H>::default());
+                // don't reserve space to be fair to BTreeMap
+                let mut map = HashMap::with_hasher(BuildHasherDefault::<H>::default());
                 for chunk in data.chunks(len) {
                     *map.entry(chunk).or_insert(0) += 1;
                 }
@@ -182,8 +180,8 @@ macro_rules! hash_benches {
 
             b.bytes = (len * num_strings) as u64;
             b.iter(|| {
-                // don't reserve space to be fair to BTree
-                let mut map = HashMap::with_hash_state(DefaultState::<H>::default());
+                // don't reserve space to be fair to BTreeMap
+                let mut map = HashMap::with_hasher(BuildHasherDefault::<H>::default());
                 for chunk in data.chunks(len) {
                     *map.entry(chunk).or_insert(0) += 1;
                 }
@@ -234,8 +232,7 @@ macro_rules! hash_benches {
 
 macro_rules! tree_benches {
     ($Impl: ty) => {
-        use std::collections::BTreeMap as StdBTree;
-        use btree_rewrite::map::BTreeMap as NewBTree;
+        use std::collections::BTreeMap;
 
         use test::{black_box, Bencher};
         pub type B<'a> = &'a mut Bencher;
@@ -303,9 +300,9 @@ macro_rules! tree_benches {
     }
 }
 
-#[cfg(test)] mod sip { hash_benches!{Sip} }
+#[cfg(test)] mod sip13 { hash_benches!{Sip13} }
+#[cfg(test)] mod sip24 { hash_benches!{Sip24} }
 #[cfg(test)] mod xx { hash_benches!{Xx} }
-#[cfg(test)] mod farm { hash_benches!{Farm} }
 #[cfg(test)] mod fnv { hash_benches!{Fnv} }
 #[cfg(test)] mod horner { hash_benches!{HornerHasher} }
 
@@ -315,8 +312,4 @@ macro_rules! tree_benches {
 // #[cfg(test)] mod blake2s { hash_benches!{Blake2s} }
 // #[cfg(test)] mod murmur { hash_benches!{MurMur}}
 
-
-#[cfg(test)] mod btree { tree_benches!{StdBTree<&[u8], i32>} }
-#[cfg(test)] mod btreenew { tree_benches!{NewBTree<&[u8], i32>} }
-
-
+#[cfg(test)] mod btree { tree_benches!{BTreeMap<&[u8], i32>} }

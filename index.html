@@ -43,20 +43,22 @@ The hash functions on display are:
 </p>
 
 <p>
-<strong>SipHash 2-4 (sip)</strong>: This is the state-of-the-art for hashing that is
+<strong>SipHash 1-3 (sip)</strong>: This is the state-of-the-art for hashing that is
 completely resistant against even theoretical hash flooding DDOS attacks when
 paired  with a random seed. While most applications probably do not require
 this, it's important for some usecases (for instance, many webservers can be
 completely locked up by POST requests with colliding keys). Since this is a
 relatively obscure attack, but quite costly when applicable, we believe that
 it's important to default to such a hash function. As such, this is the default hasher
-used by Rust's HashMap, but it can be overloaded. Sip's performance is overall
-mediocre but consistent. As such, it's not an awful default.
+used by Rust's HashMap, but another hasher can be substituted as needed. SipHash's
+performance is really good for medium input lengths.
 </p>
 
 <p>
-Performance could be gained by moving to SipHash 2-3, which has slightly inferior
-cryptographic properties, but is sufficient for preventing flooding.
+  <strong>SipHash 2-4 (sip)</strong>: Similar to SipHash 1-3, SipHash 2-4 has more
+robust cryptanalysis but is still not suitable for cryptographic purposes. SipHash 1-3
+is perfectly adequate for solving the hash flooding DDOS problem at hand. SipHash 2-4
+is a common hashing algorithm in many languages.
 </p>
 
 <p>
@@ -70,17 +72,6 @@ The Rust compiler itself uses this function.
 <p>
 <strong>xxHash (xx)</strong>: Like fnv, a hash function with good distribution, but no crypto.
 It's our best performer for large inputs, and performs strongly on small ones.
-</p>
-
-<p>
-<strong>FarmHash (farm)</strong>: Another decent distribution, but no crypto. This algorithm is
-intended to perform excellently on all sizes of input, but is massively pessimized
-by Rust's streaming hashing architecture, as it's designed to process the input
-in one shot, forcing the entire input to be buffered in a growable array. In order
-for it to compete, Rust needs to adopt a solution that allows the top-level type
-in a hashing to identify whether it can be hashed in a one-shot manner, for a
-specialized result. However this can lead to confusing or inconsistent results,
-particularly if hashing derivation is done incorrectly.
 </p>
 
 <p>
@@ -98,8 +89,22 @@ Performance is roughly on-par with xxHash.
 inputs into Rust's BTreeMap, which is based on comparisons instead of hashing. This
 serves as a baseline, as well as a demonstration of how ordered data structures
 can completely stomp unordered data structures under particular workloads, even
-when not used for their ordering properties. <strong>btreenew</strong> is an
-experimental rewrite of std's btree that is kicking its butt.
+when not used for their ordering properties.
+</p>
+
+<p>
+The deliberately excluded hash functions are:
+</p>
+
+<p>
+<strong>FarmHash (farm)</strong>: Another decent distribution, but no crypto. This algorithm is
+intended to perform excellently on all sizes of input, but is massively pessimized
+by Rust's streaming hashing architecture, as it's designed to process the input
+in one shot, forcing the entire input to be buffered in a growable array. In order
+for it to compete, Rust needs to adopt a solution that allows the top-level type
+in a hashing to identify whether it can be hashed in a one-shot manner, for a
+specialized result. However this can lead to confusing or inconsistent results,
+particularly if hashing derivation is done incorrectly.
 </p>
 
 <script type="text/javascript">
@@ -154,14 +159,13 @@ function makeGraph(title, xLabel, yLabel, csv, div) {
         y: { logscale: true, drawGrid: false },
       },
       series: {
-        sip: { color: "#cc0000" },
+        sip13: { color: "#cc0000" },
+        sip24: { color: "#cc00cc" },
         xx: { color: "#00cc00" },
         fnv: { color: "#0000cc" },
-        farm: { color: "#cc00cc" },
         murmur: { color: "#cccc00" },
         city: { color: "#00cccc" },
         btree: { color: "#000000" },
-        btreenew: { color: "#aaaaaa" },
         horner: { color: "#884444" }
       },
     }
@@ -183,4 +187,3 @@ makeBench("mapcountsparse",
 </script>
 </body>
 </html>
-
