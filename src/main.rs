@@ -1,5 +1,6 @@
 #![feature(asm)]
 #![feature(test)]
+#![feature(sip_hash_13)]
 #![allow(unused_imports, dead_code)]
 
 extern crate twox_hash;
@@ -117,7 +118,8 @@ fn do_it() -> IoResult<()> {
 
 macro_rules! hash_benches {
     ($Impl: ty) => {
-        use std::hash::SipHasher as Sip;
+        use std::hash::SipHasher13 as Sip13;
+        use std::hash::SipHasher24 as Sip24;
         use twox_hash::XxHash as Xx;
         // use murmurhash64 as murmur2;
         // use murmurhash3::Murmur3State as Murmur3State;
@@ -298,7 +300,8 @@ macro_rules! tree_benches {
     }
 }
 
-#[cfg(test)] mod sip { hash_benches!{Sip} }
+#[cfg(test)] mod sip13 { hash_benches!{Sip13} }
+#[cfg(test)] mod sip24 { hash_benches!{Sip24} }
 #[cfg(test)] mod xx { hash_benches!{Xx} }
 #[cfg(test)] mod fnv { hash_benches!{Fnv} }
 #[cfg(test)] mod horner { hash_benches!{HornerHasher} }
