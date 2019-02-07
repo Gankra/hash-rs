@@ -11,7 +11,7 @@
 // my machine, but it also makes the code more complex.
 
 
-use std::intrinsics::copy_nonoverlapping;
+use std::ptr::copy_nonoverlapping;
 //#[stable(feature = "rust1", since = "1.0.0")]
 //pub use intrinsics::copy_nonoverlapping;
 use std::hash::Hasher;
