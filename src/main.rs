@@ -1,6 +1,5 @@
 #![feature(asm)]
 #![feature(test)]
-#![feature(sip_hash_13)]
 #![allow(unused_imports, dead_code)]
 
 extern crate twox_hash;
@@ -11,6 +10,7 @@ extern crate blake2_rfc;
 extern crate test;
 extern crate regex;
 extern crate rand;
+extern crate ahash as _ahash;
 
 mod multiply_shift;
 
@@ -59,19 +59,19 @@ fn do_it() -> IoResult<()> {
     let mut data = HashMap::new();
 
     for cap in re.captures_iter(&String::from_utf8(out_buf).unwrap()) {
-        println!("{}", cap.at(0).unwrap());
-        let hasher = String::from(cap.at(1).unwrap());
-        let bench_class = String::from(cap.at(2).unwrap());
+        println!("{}", cap.get(0).unwrap().as_str());
+        let hasher = String::from(cap.get(1).unwrap().as_str());
+        let bench_class = String::from(cap.get(2).unwrap().as_str());
 
         data.entry(bench_class)
             .or_insert(HashMap::new())
             .entry(hasher)
             .or_insert(vec![])
             .push(DataPoint {
-                magnitude:  cap.at(3).unwrap().split(",").collect::<String>().parse().unwrap(),
-                average:    cap.at(4).unwrap().split(",").collect::<String>().parse().unwrap(),
-                variance:   cap.at(5).unwrap().split(",").collect::<String>().parse().unwrap(),
-                throughput: cap.at(6).unwrap().split(",").collect::<String>().parse().unwrap(),
+                magnitude:  cap.get(3).unwrap().as_str().split(",").collect::<String>().parse().unwrap(),
+                average:    cap.get(4).unwrap().as_str().split(",").collect::<String>().parse().unwrap(),
+                variance:   cap.get(5).unwrap().as_str().split(",").collect::<String>().parse().unwrap(),
+                throughput: cap.get(6).unwrap().as_str().split(",").collect::<String>().parse().unwrap(),
             });
     }
 
@@ -118,8 +118,9 @@ fn do_it() -> IoResult<()> {
 
 macro_rules! hash_benches {
     ($Impl: ty) => {
-        use std::hash::SipHasher13 as Sip13;
-        use std::hash::SipHasher24 as Sip24;
+        use std::collections::hash_map::DefaultHasher as Sip13;
+        use std::hash::SipHasher as Sip24;
+        use _ahash::AHasher as AHash;
         use twox_hash::XxHash as Xx;
         // use murmurhash64 as murmur2;
         // use murmurhash3::Murmur3State as Murmur3State;
@@ -134,6 +135,7 @@ macro_rules! hash_benches {
         use test::{black_box, Bencher};
         pub type B<'a> = &'a mut Bencher;
         use rand::{Rng, thread_rng};
+        use rand::distributions::Standard;
 
         fn hasher_bench<H>(b: B, len: usize)
         where H: Hasher + Default
@@ -173,7 +175,7 @@ macro_rules! hash_benches {
         where H: Hasher + Default
         {
             let num_strings = 1000;
-            let data: Vec<u8> = thread_rng().gen_iter()
+            let data: Vec<u8> = thread_rng().sample_iter(&Standard)
                                             .take(len * num_strings)
                                             .collect();
 
@@ -233,7 +235,7 @@ macro_rules! hash_benches {
 macro_rules! tree_benches {
     ($Impl: ty) => {
         use std::collections::BTreeMap;
-
+        use rand::distributions::Standard;
         use test::{black_box, Bencher};
         pub type B<'a> = &'a mut Bencher;
         use rand::{Rng, thread_rng};
@@ -256,7 +258,7 @@ macro_rules! tree_benches {
 
         fn map_bench_sparse(b: B, len: usize) {
             let num_strings = 1000;
-            let data: Vec<u8> = thread_rng().gen_iter()
+            let data: Vec<u8> = thread_rng().sample_iter(&Standard)
                                             .take(len * num_strings)
                                             .collect();
             let data = black_box(data);
@@ -302,6 +304,7 @@ macro_rules! tree_benches {
 
 #[cfg(test)] mod sip13 { hash_benches!{Sip13} }
 #[cfg(test)] mod sip24 { hash_benches!{Sip24} }
+#[cfg(test)] mod ahash { hash_benches!{AHash} }
 #[cfg(test)] mod xx { hash_benches!{Xx} }
 #[cfg(test)] mod fnv { hash_benches!{Fnv} }
 #[cfg(test)] mod horner { hash_benches!{HornerHasher} }
