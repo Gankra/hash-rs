@@ -11,6 +11,7 @@ extern crate test;
 extern crate regex;
 extern crate rand;
 extern crate ahash as _ahash;
+extern crate rustc_hash;
 
 mod multiply_shift;
 
@@ -128,6 +129,7 @@ macro_rules! hash_benches {
         use blake2_rfc::blake2s::Blake2s;
         use _fnv::FnvHasher as Fnv;
         use std::hash::Hasher;
+        use rustc_hash::FxHasher;
         use std::hash::{BuildHasherDefault, BuildHasher};
         use multiply_shift::HornerHasher;
 
@@ -304,6 +306,7 @@ macro_rules! tree_benches {
 
 #[cfg(test)] mod sip13 { hash_benches!{Sip13} }
 #[cfg(test)] mod sip24 { hash_benches!{Sip24} }
+#[cfg(test)] mod fx { hash_benches!{FxHasher} }
 #[cfg(test)] mod ahash { hash_benches!{AHash} }
 #[cfg(test)] mod xx { hash_benches!{Xx} }
 #[cfg(test)] mod fnv { hash_benches!{Fnv} }
