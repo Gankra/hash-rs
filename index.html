@@ -62,6 +62,11 @@ is a common hashing algorithm in many languages.
 </p>
 
 <p>
+  <strong>FxHash</strong>: FxHash is used by FireFox and the hashbrown crate. It
+  is optimized for small key but has no cryptographic properties.
+</p>
+
+<p>
 <strong>Fowler-Noll-Vo (fnv)</strong>: A hash function with excellent distribution, but no particular
 cryptographic properties. FNV is the best at small inputs, but does terribly on large
 inputs. Since small inputs are much more common, it's the
@@ -161,6 +166,7 @@ function makeGraph(title, xLabel, yLabel, csv, div) {
       series: {
         sip13: { color: "#cc0000" },
         sip24: { color: "#cc00cc" },
+        fx: { color: "#448844" },
         xx: { color: "#00cc00" },
         fnv: { color: "#0000cc" },
         murmur: { color: "#cccc00" },
