@@ -10,12 +10,10 @@
 // TODO: accumulating four hash values at once increases the speed on
 // my machine, but it also makes the code more complex.
 
-
-use std::ptr::copy_nonoverlapping;
-//#[stable(feature = "rust1", since = "1.0.0")]
-//pub use intrinsics::copy_nonoverlapping;
-use std::hash::Hasher;
+use std::arch::asm;
 use std::cmp::min;
+use std::hash::Hasher;
+use std::ptr::copy_nonoverlapping;
 
 // This is called a "Horner" hasher because the iterated
 // multiply-shift operation resembles Horner's method for evaluating
@@ -35,7 +33,7 @@ pub struct HornerHasher {
     result: [u64; 4],
     accum: [u64; 4],
     // The number of bytes we have seen so far
-    count: u64
+    count: u64,
 }
 
 impl Default for HornerHasher {
@@ -45,11 +43,13 @@ impl Default for HornerHasher {
         // constructor.
         //
         // h0 must be odd.
-        return HornerHasher {h0: 4167967182414233411,
-                             h1: 15315631059493996859,
-                             result: [0,0,0,0],
-                             accum: [0,0,0,0],
-                             count: 0};
+        HornerHasher {
+            h0: 4167967182414233411,
+            h1: 15315631059493996859,
+            result: [0, 0, 0, 0],
+            accum: [0, 0, 0, 0],
+            count: 0,
+        }
     }
 }
 
@@ -60,14 +60,19 @@ impl Default for HornerHasher {
 #[cfg(target_arch = "x86_64")]
 #[inline(always)]
 fn hi64mul(x: u64, y: u64) -> u64 {
-    let _lo: u64; let hi: u64;
-    unsafe { asm!("mulq $2"
-                  : "={rax}" (_lo), "={rdx}" (hi)
-                  : "r" (x), "{rax}" (y)
-                  : "cc" :); }
+    let _lo: u64;
+    let hi: u64;
+    unsafe {
+        asm!(
+            "mul {0}",
+            in(reg) x,
+            in("rax") y,
+            lateout("rax") _lo,
+            out("rdx") hi,
+        );
+    }
     hi
 }
-
 
 // Multiply two 128-bit numbers and write 64 bits of the product to
 // 'result'. The bits written are those starting from the 64th least
@@ -97,7 +102,6 @@ unsafe fn load_u64(buf: &[u8], i: usize) -> u64 {
 }
 
 impl Hasher for HornerHasher {
-
     fn finish(&self) -> u64 {
         if self.count <= 8 {
             let mut t1 = self.accum[0];
@@ -131,9 +135,14 @@ impl Hasher for HornerHasher {
         // the length of the string to prevent engineered collisions
         // by prepending '\000's to hashed keys.
         let mut i: usize = 0;
-        let mut result: [u64; 4] = [self.result[0], self.result[1], self.result[2], self.result[3]];
+        let mut result: [u64; 4] = [
+            self.result[0],
+            self.result[1],
+            self.result[2],
+            self.result[3],
+        ];
 
-        while i < (((self.count & 31) + 7)/8) as usize {
+        while i < (((self.count & 31) + 7) / 8) as usize {
             mult_hi128(&mut result[i], self.accum[i], self.h0, self.h1);
             i += 1;
         }
@@ -144,7 +153,7 @@ impl Hasher for HornerHasher {
         mult_hi128(&mut result[0], self.count, self.h0, self.h1);
         let f1 = result[1];
         mult_hi128(&mut result[0], f1, self.h0, self.h1);
-        return result[0];
+        result[0]
     }
 
     fn write(&mut self, bytes: &[u8]) {
@@ -153,10 +162,11 @@ impl Hasher for HornerHasher {
         // Fill up self.accum, as much as possible
         let n: u64 = min(32 - (self.count & 31), bytes.len() as u64);
         unsafe {
-            copy_nonoverlapping(bytes.get_unchecked(i),
-                                (&mut self.accum[0] as *mut u64 as *mut u8)
-                                .offset((self.count & 31) as isize),
-                                n as usize);
+            copy_nonoverlapping(
+                bytes.get_unchecked(i),
+                (&mut self.accum[0] as *mut u64 as *mut u8).offset((self.count & 31) as isize),
+                n as usize,
+            );
         }
         self.count += n;
         i += n as usize;
@@ -185,23 +195,41 @@ impl Hasher for HornerHasher {
         // This is the main loop: for each 4 64-byte words we pull
         // from bytes, hash it into self.result.
         while i + 31 < bytes.len() {
-            mult_hi128(&mut self.result[0],
-                       unsafe {load_u64(bytes, i)},
-                       self.h0, self.h1);
-            mult_hi128(&mut self.result[1],
-                       unsafe {load_u64(bytes, i + 8)},
-                       self.h0, self.h1);
-            mult_hi128(&mut self.result[2],
-                       unsafe {load_u64(bytes, i + 16)},
-                       self.h0, self.h1);
-            mult_hi128(&mut self.result[3],
-                       unsafe {load_u64(bytes, i + 24)},
-                       self.h0, self.h1);
+            mult_hi128(
+                &mut self.result[0],
+                unsafe { load_u64(bytes, i) },
+                self.h0,
+                self.h1,
+            );
+            mult_hi128(
+                &mut self.result[1],
+                unsafe { load_u64(bytes, i + 8) },
+                self.h0,
+                self.h1,
+            );
+            mult_hi128(
+                &mut self.result[2],
+                unsafe { load_u64(bytes, i + 16) },
+                self.h0,
+                self.h1,
+            );
+            mult_hi128(
+                &mut self.result[3],
+                unsafe { load_u64(bytes, i + 24) },
+                self.h0,
+                self.h1,
+            );
             i += 32;
         }
 
         // Add in the remaining data to self.accum.
         let n = bytes.len() - i;
-        unsafe {copy_nonoverlapping(bytes.get_unchecked(i), &mut self.accum[0] as *mut u64 as *mut u8, n);}
+        unsafe {
+            copy_nonoverlapping(
+                bytes.get_unchecked(i),
+                &mut self.accum[0] as *mut u64 as *mut u8,
+                n,
+            );
+        }
     }
 }
