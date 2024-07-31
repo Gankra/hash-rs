@@ -1,15 +1,19 @@
 [package]
 name = "hash-rs"
 version = "0.1.0"
+edition = "2021"
 authors = ["Alexis Beingessner <a.beingessner@gmail.com>"]
 
 [dependencies]
-twox-hash = "*"
-# murmurhash64 = "*"
+twox-hash = "1.6.3"
+murmurhash64 = "0.3.1"
 murmurhash3 = "*"
 fnv = "*"
 blake2-rfc = "*"
-regex = "1.1.2"
-rand = "0.6.5"
-ahash = "*"
-rustc-hash = "*"
+regex = "1.10.5"
+rand = "0.8.5"
+ahash = "0.8.11"
+rustc-hash = "2.0.0"
+
+[profile.release]
+debug = true
